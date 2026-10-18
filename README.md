@@ -21,7 +21,7 @@ npm run seed         # demo people (mika / jules / rae / sam, password dabber123
 npm run build && npm start   # production build on the same port
 ```
 
-Requires Node 20.9+ (tested on 22).
+Requires Node 20.9+ (tested on 20.19 and 22). Ignore `npm audit fix --force`: it tries to jump Next and its lint config across major versions. See DECISIONS.md → Dependencies.
 
 ## Scripts
 

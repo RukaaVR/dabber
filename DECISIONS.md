@@ -103,3 +103,14 @@ desktop notifications; UI sounds with a mute toggle; server mute; PWA manifest; 
   chronological and paging uses `before` / `after` / `around` cursors.
 - `npm run seed` adds four demo people (`mika`, `jules`, `rae`, `sam`, password `dabber123`) and three
   public servers so Discover isn't empty on a fresh install.
+
+## Dependencies
+
+- **Node 20 support.** `better-sqlite3` is pinned to 12.x, the last line that supports Node 20 (13.x
+  needs Node 22). The unused `nanoid` package is gone (its latest version also needed Node 22).
+  `npm install`, build, lint, dev, start and the 34-flow smoke test all pass on Node 20.19.2.
+- **`npm audit`.** Next 15 pins an old `postcss`, so `package.json` uses `overrides` to lift it to a
+  patched 8.5.x. What's left is the `braces` advisory, which reaches us only through
+  `eslint-config-next` → `fast-glob` (lint tooling, never shipped or run by the app) and has no patched
+  release. `npm audit fix --force` "fixes" it by downgrading the lint config to Next 14's and
+  upgrading Next to 16, which breaks the build, so don't run it.
