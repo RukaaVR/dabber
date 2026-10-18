@@ -2238,6 +2238,17 @@ img {
   color: var(--text-muted);
   font-size: 14px;
 }
+.char-count {
+  align-self: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  padding: 0 4px;
+}
+.char-count.over {
+  color: var(--danger);
+}
 .reply-bar {
   display: flex;
   align-items: center;

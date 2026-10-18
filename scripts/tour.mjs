@@ -88,6 +88,27 @@ try {
   await shot(p, "settings-voice");
   await p.keyboard.press("Escape");
 
+  // light theme chat + tablet width
+  await p.click("button[aria-label='Settings']");
+  await p.click(".settings-nav button:has-text('Appearance')");
+  await p.click(".theme-tile:has-text('Light')");
+  await p.keyboard.press("Escape");
+  await p.click(".rail-item[aria-label^='Dabber Lounge']");
+  await p.locator(".composer textarea").waitFor();
+  await shot(p, "light-chat");
+  await p.setViewportSize({ width: 900, height: 760 });
+  await shot(p, "tablet-light");
+  await p.click("button[aria-label='Settings']");
+  await p.click(".settings-nav button:has-text('Appearance')");
+  await p.click(".theme-tile:has-text('Dark')");
+  await p.keyboard.press("Escape");
+  await p.setViewportSize({ width: 1360, height: 860 });
+  // keyboard: Tab from the top lands on the rail, Enter opens a server
+  await p.keyboard.press("Escape");
+  await p.focus(".rail-item[aria-label='Direct messages']");
+  await p.keyboard.press("Tab");
+  await shot(p, "keyboard-focus");
+
   const m = await page({ width: 390, height: 844 });
   await login(m);
   await m.click(".rail-item[aria-label^='Dabber Lounge']");

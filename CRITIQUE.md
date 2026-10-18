@@ -82,3 +82,41 @@ video frames arrive), creating a DM from the group picker, and kicking a member 
 | 2 | Bug | Coming back to a server lands in the **voice** channel you last opened instead of your last text channel, so the member list and composer are missing (found by the kick flow). | ✅ only text channels are remembered |
 | 3 | Bug | Kick / ban / nickname launched from a profile card's ⋯ menu open their confirm dialog *underneath* the card (z-index 70 vs 60), so the dialog can't be clicked. | ✅ the card closes when a modal opens and sits below modals |
 | 4 | Layout | The incoming-call card sits bottom-right on top of the composer's emoji / mic buttons. | ✅ moved under the header, top-right |
+
+## Pass 5
+
+Build, lint and smoke (34 flows) are clean, and the tour (now with light theme, a 900px tablet width
+and keyboard focus) logs no console errors.
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| 1 | Assets | Still blocked (see pass 1). | ⛔ |
+| 2 | UX | Nothing warns you before you hit the 4,000-character message limit; the error only shows after you press Enter. | ✅ live counter for the last 200 characters, red when over |
+
+## Pass 6
+
+Fresh database (first-run path), `npm run build` with no warnings, `npm run lint` clean, smoke 34/34,
+tour clean, and the server log has no errors. `npm run dev` on an empty data dir boots and serves `/`,
+`/login`, `/signup`, `/app` (→ login redirect), `/guidelines`, `/invite/x`, `/api/health` and the
+manifest.
+
+**New issues: none** (other than the external asset block).
+
+## Pass 7
+
+Independent rerun on another fresh database: build clean, lint clean, smoke 34/34, tour clean, 0
+console errors besides the asset 404s, and 0 server errors.
+
+**New issues: none** (other than the external asset block).
+
+## Exit status
+
+Two consecutive passes (6 and 7) found nothing left to fix in the code. One item stays open, and it
+is outside the code:
+
+- **ForgeGUI asset files aren't in `public/` yet.** All 41 assets (35 images including
+  background-removed versions, and 11 sounds) were generated with ForgeGUI under one style, but the
+  files live on `azyjlkhpdgafuobyxoax.supabase.co`, which this sandbox's network policy refuses
+  (HTTP 403 on CONNECT). Until they're fetched, each image falls back gracefully (no broken icons)
+  and sounds are silent, but the browser logs a 404 per missing file. The fix is two commands where that
+  host is reachable: `scripts/fetch-assets.sh .asset-staging && scripts/process-assets.sh .asset-staging`.

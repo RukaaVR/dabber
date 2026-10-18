@@ -350,6 +350,11 @@ export function Composer({
             }
           }}
         />
+        {!recording && text.length > LIMITS.messageLength - 200 && (
+          <span className={`char-count${text.trim().length > LIMITS.messageLength ? " over" : ""}`} aria-live="polite">
+            {LIMITS.messageLength - text.trim().length}
+          </span>
+        )}
         {!recording && (
           <Tip label="Emoji">
             <button
