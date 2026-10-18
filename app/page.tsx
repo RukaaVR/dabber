@@ -50,8 +50,9 @@ const MOCK = [
 
 function Mock() {
   return (
-    <div className="hp-mock" aria-hidden="true">
+    <div className="hp-mock-wrap" aria-hidden="true">
       <Img className="hp-mascot" src="/brand/mascot.png" />
+      <div className="hp-mock">
       <div className="hp-mock-rail">
         <span style={{ background: "var(--accent)" }} />
         <span style={{ background: "#ff5fa2", borderRadius: 17 }} />
@@ -104,6 +105,7 @@ function Mock() {
           ))}
         </div>
         <div className="hp-mock-input">Message #general</div>
+      </div>
       </div>
     </div>
   );

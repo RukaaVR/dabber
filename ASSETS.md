@@ -23,12 +23,12 @@ to run Dabber never need either script.
 
 ## Logo and app icons
 
-The mascot ("Dab", a blue blob with a curly tuft) is hand-drawn vector art in
-`public/brand/mascot.svg`. `node scripts/render-icons.mjs` renders it into `brand/logo-mark.png`,
-`brand/mascot.png`, `icons/icon.svg`, `icons/icon-192.png`, `icons/icon-512.png`,
-`icons/icon-maskable-512.png` (safe-zone padded), `icons/apple-touch-icon.png` and `favicon.ico`
-(16/32/48, via ImageMagick). The earlier ForgeGUI logo generations (`382bbd0b…`, `65eba315…`) were
-replaced at the owner's request.
+The mascot is the owner's own artwork: a blue cat-blob with a swoosh, kept as-is in
+`public/brand/mascot-source.webp`. `scripts/build-icons.sh` (ImageMagick) keys out its flat dark
+background and produces `brand/mascot.png` and `brand/logo-mark.png` (transparent),
+`icons/icon-512.png` and `icons/icon-192.png` (rounded tiles), `icons/icon-maskable-512.png`
+(padded to the safe zone), `icons/apple-touch-icon.png` and `favicon.ico` (16/32/48). It replaces
+the earlier ForgeGUI and hand-drawn logos.
 
 ## Images
 

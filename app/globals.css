@@ -4003,11 +4003,14 @@ img {
   position: relative;
   font-size: 14px;
 }
+.hp-mock-wrap {
+  position: relative;
+}
 .hp-mascot {
   position: absolute;
-  width: 110px;
-  right: -26px;
-  top: -54px;
+  width: 150px;
+  right: -34px;
+  top: -78px;
   z-index: 3;
   animation: bob 4s ease-in-out infinite;
   filter: drop-shadow(0 10px 18px #0006);
@@ -4443,8 +4446,9 @@ img {
     display: none;
   }
   .hp-mascot {
-    right: 0;
-    width: 90px;
+    right: -6px;
+    top: -58px;
+    width: 110px;
   }
   .discover {
     padding: 12px;
