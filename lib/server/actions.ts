@@ -131,12 +131,13 @@ export function joinServer(serverId: string, userId: string) {
   return !!ins.changes;
 }
 
-export function removeMember(serverId: string, userId: string) {
+export function removeMember(serverId: string, userId: string, reason: "left" | "kicked" | "banned" = "left") {
   const db = getDb();
+  const name = (db.prepare("SELECT name FROM servers WHERE id = ?").get(serverId) as Row | undefined)?.name ?? "";
   db.prepare("DELETE FROM members WHERE server_id = ? AND user_id = ?").run(serverId, userId);
   emitToServer(serverId, "member:remove", { serverId, userId });
   setServerRoom(userId, serverId, false);
-  emitToUsers([userId], "server:delete", { id: serverId });
+  emitToUsers([userId], "server:delete", { id: serverId, name, reason });
 }
 
 export function systemMessage(channelId: string, authorId: string, type: Message["type"], content = "") {

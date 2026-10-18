@@ -364,6 +364,11 @@ export function hydrateMessages(rows: Row[], viewerId: string): Message[] {
   const atts = db.prepare(`SELECT * FROM attachments WHERE message_id IN (${ph})`).all(...ids) as Row[];
   const ments = db.prepare(`SELECT * FROM mentions WHERE message_id IN (${ph})`).all(...ids) as Row[];
   const reacts = reactionGroups(ids, viewerId);
+  const polls = new Map<string, Row>();
+  for (const p of db.prepare(`SELECT * FROM polls WHERE message_id IN (${ph})`).all(...ids) as Row[]) polls.set(p.message_id, p);
+  const votes = polls.size
+    ? (db.prepare(`SELECT * FROM poll_votes WHERE message_id IN (${[...polls.keys()].map(() => "?").join(",")})`).all(...polls.keys()) as Row[])
+    : [];
   const replyIds = [...new Set(rows.map((r) => r.reply_to).filter(Boolean))] as string[];
   const replies = new Map<string, Row>();
   if (replyIds.length) {
@@ -371,6 +376,13 @@ export function hydrateMessages(rows: Row[], viewerId: string): Message[] {
       .prepare(`SELECT * FROM messages WHERE id IN (${replyIds.map(() => "?").join(",")})`)
       .all(...replyIds) as Row[])
       replies.set(r.id, r);
+  }
+  const replyPolls = new Map<string, string>();
+  if (replyIds.length) {
+    for (const r of db
+      .prepare(`SELECT message_id, question FROM polls WHERE message_id IN (${replyIds.map(() => "?").join(",")})`)
+      .all(...replyIds) as Row[])
+      replyPolls.set(r.message_id, r.question);
   }
   const replyAtt = new Set<string>();
   if (replyIds.length) {
@@ -389,7 +401,12 @@ export function hydrateMessages(rows: Row[], viewerId: string): Message[] {
       type: r.type,
       replyTo: r.reply_to
         ? rep
-          ? { id: rep.id, authorId: rep.author_id, content: rep.content.slice(0, 200), hasAttachments: replyAtt.has(rep.id) }
+          ? {
+              id: rep.id,
+              authorId: rep.author_id,
+              content: (rep.content || (replyPolls.has(rep.id) ? `📊 ${replyPolls.get(rep.id)}` : "")).slice(0, 200),
+              hasAttachments: replyAtt.has(rep.id),
+            }
           : { id: r.reply_to, authorId: null, content: "", hasAttachments: false, deleted: true }
         : null,
       mentions: ments.filter((m) => m.message_id === r.id).map((m) => m.user_id),
@@ -401,6 +418,16 @@ export function hydrateMessages(rows: Row[], viewerId: string): Message[] {
         .filter((a) => a.message_id === r.id)
         .map((a): Attachment => ({ id: a.id, filename: a.filename, url: a.url, mime: a.mime, size: a.size })),
       reactions: reacts.get(r.id) ?? [],
+      poll: polls.has(r.id)
+        ? {
+            question: polls.get(r.id)!.question,
+            multi: !!polls.get(r.id)!.multi,
+            options: (JSON.parse(polls.get(r.id)!.options) as string[]).map((text, i) => ({
+              text,
+              voterIds: votes.filter((v) => v.message_id === r.id && v.option_index === i).map((v) => v.user_id),
+            })),
+          }
+        : null,
     };
   });
 }

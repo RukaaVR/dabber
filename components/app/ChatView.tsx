@@ -77,6 +77,11 @@ function DmStart({ c }: { c: Channel }) {
 function HeadSearch({ channelId }: { channelId: string }) {
   const panel = useStore((s) => s.panel);
   const [q, setQ] = useState("");
+  const prevPanel = useRef(panel);
+  useEffect(() => {
+    if (prevPanel.current === "search" && panel !== "search") setQ("");
+    prevPanel.current = panel;
+  }, [panel]);
   return (
     <form
       className="head-search"

@@ -1,10 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Hash, Volume2 } from "lucide-react";
 import { SESSION_COOKIE, userIdFromToken } from "@/lib/server/auth";
 import { LiveCount } from "@/components/LiveCount";
 import { SiteFoot, SiteTop } from "@/components/SiteChrome";
+import { Img } from "@/components/ui/Img";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +35,7 @@ const FEATURES = [
     text: "Dark or light, twelve accent tints, banners and a bio. Your profile card says hi before you do.",
   },
   {
-    icon: "/illustrations/feature-bots.png",
+    icon: "/illustrations/feature-selfhost.png",
     title: "Runs anywhere",
     text: "One command and it’s up on your own machine. Your messages live in a single file you control.",
   },
@@ -51,7 +51,7 @@ const MOCK = [
 function Mock() {
   return (
     <div className="hp-mock" aria-hidden="true">
-      <img className="hp-mascot" src="/brand/mascot.png" alt="" />
+      <Img className="hp-mascot" src="/brand/mascot.png" />
       <div className="hp-mock-rail">
         <span style={{ background: "var(--accent)" }} />
         <span style={{ background: "#ff5fa2", borderRadius: 17 }} />
@@ -142,14 +142,14 @@ export default async function Home() {
           <section className="hp-features" id="features" aria-label="Features">
             {FEATURES.map((f) => (
               <article key={f.title} className="hp-feature">
-                <img src={f.icon} alt="" width={64} height={64} />
+                <Img src={f.icon} width={64} height={64} />
                 <h2>{f.title}</h2>
                 <p>{f.text}</p>
               </article>
             ))}
           </section>
           <section className="hp-end">
-            <img src="/brand/mascot.png" alt="" />
+            <Img src="/brand/mascot.png" />
             <h2>Come dab with us.</h2>
             <p>Making an account takes a minute. No card, no trial, no catch.</p>
             <Link href={loggedIn ? "/app" : "/signup"} className="btn hp-btn" style={{ color: "var(--on-accent)" }}>

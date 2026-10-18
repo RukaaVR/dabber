@@ -1,6 +1,6 @@
 // Accent tints. The first color drives buttons/links, the second the secondary glow.
 export const ACCENTS: Record<string, { label: string; a: string; b: string }> = {
-  violet: { label: "Dab Violet", a: "#7b61ff", b: "#ff5fa2" },
+  violet: { label: "Dab Violet", a: "#7158f5", b: "#ff5fa2" },
   grape: { label: "Grape", a: "#9b5cf6", b: "#5ec8ff" },
   bubblegum: { label: "Bubblegum", a: "#ff5fa2", b: "#ffc857" },
   coral: { label: "Coral", a: "#ff6f59", b: "#ffb86b" },
@@ -14,9 +14,20 @@ export const ACCENTS: Record<string, { label: string; a: string; b: string }> = 
   neon: { label: "Neon", a: "#d63ef0", b: "#33e6ff" },
 };
 
+function luminance(hex: string) {
+  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+
+/** White or near-black text, whichever reads better on the accent. */
+export function onAccent(hex: string) {
+  const l = luminance(hex);
+  return (1.05 / (l + 0.05)) >= ((l + 0.05) / 0.06) ? "#ffffff" : "#111217";
+}
+
 export const THEME_BOOT_SCRIPT = `(function(){try{var d=document.documentElement;var t=localStorage.getItem('dabber-theme')==='light'?'light':'dark';d.dataset.theme=t;var A=${JSON.stringify(
-  Object.fromEntries(Object.entries(ACCENTS).map(([k, v]) => [k, [v.a, v.b]])),
-)};var k=localStorage.getItem('dabber-accent');if(k&&A[k]){d.style.setProperty('--accent',A[k][0]);d.style.setProperty('--accent-2',A[k][1]);}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#e4e5ea':'#121318');}catch(e){}})();`;
+  Object.fromEntries(Object.entries(ACCENTS).map(([k, v]) => [k, [v.a, v.b, onAccent(v.a)]])),
+)};var k=localStorage.getItem('dabber-accent');if(k&&A[k]){d.style.setProperty('--accent',A[k][0]);d.style.setProperty('--accent-2',A[k][1]);d.style.setProperty('--on-accent',A[k][2]);}var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',t==='light'?'#e4e5ea':'#121318');}catch(e){}})();`;
 
 export function applyTheme(theme: "dark" | "light", accent: string) {
   const d = document.documentElement;
@@ -24,11 +35,12 @@ export function applyTheme(theme: "dark" | "light", accent: string) {
   const a = ACCENTS[accent] ?? ACCENTS.violet;
   d.style.setProperty("--accent", a.a);
   d.style.setProperty("--accent-2", a.b);
+  d.style.setProperty("--on-accent", onAccent(a.a));
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#e4e5ea" : "#121318");
 }
 
 // Colors for letter avatars / server icons / default banners.
-export const PALETTE = ["#7b61ff", "#ff5fa2", "#1fbf8f", "#e8a10c", "#3d8bff", "#ff6f59"];
+export const PALETTE = ["#7158f5", "#e0407f", "#13946c", "#b67c00", "#2470e6", "#e24b33"];
 
 export function colorFor(seed: string | number): string {
   if (typeof seed === "number") return PALETTE[Math.abs(seed) % PALETTE.length];

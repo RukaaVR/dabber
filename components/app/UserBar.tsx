@@ -1,7 +1,8 @@
 "use client";
 
-import { Headphones, HeadphoneOff, Mic, MicOff, MonitorUp, PhoneOff, Settings, Signal } from "lucide-react";
-import { set, useStore } from "@/lib/client/store";
+import { Headphones, HeadphoneOff, Mic, MicOff, MonitorUp, PhoneOff, Settings, Signal, Bell, BellOff } from "lucide-react";
+import { set, setPrefs, useStore } from "@/lib/client/store";
+import { play } from "@/lib/client/sounds";
 import { channelLabel, statusLabel } from "@/lib/client/selectors";
 import { leaveVoice, toggleDeafen, toggleMute, toggleScreenShare } from "@/lib/client/voice";
 import { logout, setStatus, copy } from "@/lib/client/actions";
@@ -75,6 +76,7 @@ export function SidebarFooter() {
   const me = useStore((s) => s.me);
   const muted = useStore((s) => s.voice.muted);
   const deafened = useStore((s) => s.voice.deafened);
+  const sounds = useStore((s) => s.prefs.sounds);
   if (!me) return null;
   const sub = me.customStatus || statusLabel(me.status === "invisible" ? "invisible" : me.statusPref);
   return (
@@ -108,6 +110,19 @@ export function SidebarFooter() {
             aria-pressed={deafened}
           >
             {deafened ? <HeadphoneOff size={19} /> : <Headphones size={19} />}
+          </button>
+        </Tip>
+        <Tip label={sounds ? "Mute sounds" : "Unmute sounds"}>
+          <button
+            className={`icon-btn${sounds ? "" : " danger-on"}`}
+            onClick={() => {
+              setPrefs({ sounds: !sounds });
+              if (!sounds) setTimeout(() => play("click"), 0);
+            }}
+            aria-label={sounds ? "Mute sounds" : "Unmute sounds"}
+            aria-pressed={!sounds}
+          >
+            {sounds ? <Bell size={18} /> : <BellOff size={18} />}
           </button>
         </Tip>
         <Tip label="User settings">

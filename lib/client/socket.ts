@@ -9,6 +9,7 @@ import {
   removeServer,
   set,
   setReactions,
+  toast,
   updateMessage,
   upsertUsers,
 } from "./store";
@@ -61,12 +62,13 @@ function notify(m: Message) {
   const viewing = activeChannel === m.channelId && focused();
   if (viewing) return;
   if (s.me.statusPref === "dnd") return;
+  if (ch.serverId && s.prefs.mutedServers[ch.serverId] && !mentionsMe) return;
   if (isDm || mentionsMe) play("mention");
   else if (activeChannel === m.channelId) play("receive");
   if ((isDm || mentionsMe) && s.prefs.desktopNotifs && typeof Notification !== "undefined" && Notification.permission === "granted" && !focused()) {
     const who = displayName(s, m.authorId, ch.serverId);
     const where = isDm ? "" : ` (#${channelLabel(s, ch)})`;
-    const body = m.content.replace(/<@([a-z0-9]{16})>/g, (_, id) => `@${displayName(s, id, ch.serverId)}`) || "Sent an attachment";
+    const body = m.content.replace(/<@([a-z0-9]{16})>/g, (_, id) => `@${displayName(s, id, ch.serverId)}`) || (m.poll ? `📊 ${m.poll.question}` : "Sent an attachment");
     try {
       const n = new Notification(`${who}${where}`, { body: body.slice(0, 180), icon: "/icons/icon-192.png", tag: m.channelId });
       n.onclick = () => {
@@ -187,8 +189,12 @@ export function connectSocket() {
   socket.on("server:update", ({ server }: { server: Partial<Server> & { id: string } }) =>
     set((s) => (s.servers[server.id] ? { servers: { ...s.servers, [server.id]: { ...s.servers[server.id], ...server } } } : {})),
   );
-  socket.on("server:delete", ({ id }: { id: string }) => {
+  socket.on("server:delete", ({ id, name, reason }: { id: string; name?: string; reason?: string }) => {
+    if (!get().servers[id]) return;
     removeServer(id);
+    if (reason === "kicked") toast(`You were kicked from ${name}.`, "error");
+    if (reason === "banned") toast(`You were banned from ${name}.`, "error");
+    if (reason === "deleted") toast(`${name} was deleted by its owner.`);
     window.dispatchEvent(new CustomEvent("dabber:server-gone", { detail: id }));
   });
   socket.on("channel:upsert", ({ channel }: { channel: Channel }) =>

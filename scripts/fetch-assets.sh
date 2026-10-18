@@ -24,6 +24,27 @@ img empty-server 41fca386-02f0-48a9-a8e6-255ec885b561 1
 img discover-hero 6501d453-d395-4b11-89df-60b5031d9bb6 1
 img og 08f56dfe-057c-4ebc-b1a9-1afa169654fe 1
 img feature-icons 787077d3-1c09-4165-a9a7-2ea714813430 6
+img feature-selfhost 2895a38d-2e2b-4ee1-8459-e5e7d43318f1 1
+img nobg-feature-selfhost 3479c520-112f-4cb0-afa3-d2965bb2feef 1
+
+# background-removed versions (remove_background jobs)
+img nobg-logo-a d5af40ed-0b39-4763-b49c-4bd2b39f095b 1
+img nobg-logo-b 1f83c2da-9f66-45b0-a480-2e41046c1366 1
+img nobg-friends 52bcc495-aa24-49e5-83c4-2593ec4f27b6 1
+img nobg-mentions 0ac9c6a0-7487-4531-87cd-3156c95560ec 1
+img nobg-pins 8fdb6c95-215f-4547-92e9-5d3e82f3d416 1
+img nobg-chat 3596805d-8458-45c6-9c08-01daea7a9e76 1
+img nobg-voice dc378175-a9e4-40dc-ae1d-8b6e36415e1e 1
+img nobg-search 846dd644-5013-4e01-a996-1a0e7ec91db5 1
+img nobg-lost 24ebce9f-bab5-4323-ab10-647bdf84a932 1
+img nobg-error cf9b0a8a-0b07-42c8-a664-a5ef49a0ff92 1
+img nobg-server ea5e23b5-b739-42f9-8cc6-cf7d8aca2fed 1
+img nobg-feature-free 0a9471d5-5062-4038-a705-4c3353285146 1
+img nobg-feature-servers 9ef6468a-7562-4937-acb3-665b6ae845e5 1
+img nobg-feature-voice 61a6f135-c49e-463a-ac5f-f882381391ca 1
+img nobg-feature-robot 7175543f-87f8-4a05-a1cc-9e73d2fa8796 1
+img nobg-feature-safety 55767449-063c-4345-abe5-a5fd87cdb4bf 1
+img nobg-feature-themes 5c946f5e-db65-42a8-a233-45274c97ad1c 1
 
 sfx send 3fd26de1-68f7-49f6-aca3-2b56aefd8459-sound_effect-0-0652e3e5-981f-4e2e-979d-e78c4c7be8c3.mp3
 sfx receive 2bd5fce6-0886-4f67-90cf-cf4f49f18c4c-sound_effect-0-bf59331d-480e-4223-9c33-ee075b2c14a1.mp3

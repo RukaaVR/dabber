@@ -75,6 +75,7 @@ export interface Prefs {
   collapsed: Record<string, boolean>;
   micId: string;
   lastChannel: Record<string, string>;
+  mutedServers: Record<string, boolean>;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -87,6 +88,7 @@ export const DEFAULT_PREFS: Prefs = {
   collapsed: {},
   micId: "",
   lastChannel: {},
+  mutedServers: {},
 };
 
 export interface VoiceLocal {

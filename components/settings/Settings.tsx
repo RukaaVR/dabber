@@ -10,6 +10,7 @@ import { play } from "@/lib/client/sounds";
 import { Switch } from "../ui/Switch";
 import { UserAvatar, defaultAvatar } from "../ui/Avatar";
 import { Modal } from "../ui/Modal";
+import { Img } from "../ui/Img";
 
 const SECTIONS = [
   { group: "User settings", items: [
@@ -340,8 +341,7 @@ function Profile() {
                   aria-label={`Default avatar ${i + 1}`}
                   onClick={() => setDraft({ ...draft, avatar: null, avatarSeed: i })}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={defaultAvatar(i)} alt="" width={44} height={44} />
+                  <Img src={defaultAvatar(i)} width={44} height={44} fallback={<span style={{ display: "block", width: "100%", height: "100%", background: colorFor(i) }} />} />
                 </button>
               ))}
             </div>

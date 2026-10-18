@@ -100,6 +100,12 @@ export interface ReplyPreview {
   deleted?: boolean;
 }
 
+export interface Poll {
+  question: string;
+  options: { text: string; voterIds: string[] }[];
+  multi: boolean;
+}
+
 export interface Message {
   id: string;
   channelId: string;
@@ -114,6 +120,7 @@ export interface Message {
   createdAt: number;
   attachments: Attachment[];
   reactions: ReactionGroup[];
+  poll?: Poll | null;
   nonce?: string;
 }
 

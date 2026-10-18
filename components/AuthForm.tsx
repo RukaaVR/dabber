@@ -21,6 +21,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
+  const [forgot, setForgot] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [avail, setAvail] = useState<null | { available: boolean; valid: boolean }>(null);
@@ -116,6 +117,17 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             </button>
           </div>
           {mode === "signup" && <span className="hint">At least 6 characters.</span>}
+          {mode === "login" && (
+            <button type="button" className="btn link" style={{ alignSelf: "flex-start", fontSize: 13 }} onClick={() => setForgot((v) => !v)}>
+              Forgot your password?
+            </button>
+          )}
+          {forgot && (
+            <span className="hint" role="note">
+              Dabber runs on your own machine, so there’s no reset email. Whoever runs this server can set a new one with{" "}
+              <code>npm run reset-password -- {username || "yourname"} newpassword</code>.
+            </span>
+          )}
         </div>
         <button className="btn block" style={{ height: 44, marginTop: 6 }} disabled={busy || !username || password.length < (mode === "signup" ? 6 : 1)}>
           {busy ? <span className="spinner" style={{ width: 18, height: 18, borderTopColor: "#fff" }} /> : c.button}

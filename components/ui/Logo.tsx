@@ -1,10 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { Img } from "./Img";
 
 export function Logo({ size = 32, href = "/", text = true }: { size?: number; href?: string | null; text?: boolean }) {
   const inner = (
     <>
-      <img src="/brand/logo-mark.png" alt="" width={size} height={size} />
+      <Img src="/brand/logo-mark.png" width={size} height={size} />
       {text && <span>Dabber</span>}
     </>
   );

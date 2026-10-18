@@ -15,6 +15,7 @@ import { DiscoverView } from "./DiscoverView";
 import { ServerLanding } from "./ServerLanding";
 import { Overlays } from "../overlays/Overlays";
 import { Empty } from "../ui/Empty";
+import { Img } from "../ui/Img";
 
 function useViewportHeight() {
   useEffect(() => {
@@ -66,8 +67,7 @@ function Loading() {
   return (
     <div className="auth-wrap" aria-busy="true" aria-label="Loading Dabber">
       <div style={{ textAlign: "center" }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-mark.png" alt="" width={96} height={96} style={{ animation: "bob 1.6s ease-in-out infinite" }} />
+        <Img src="/brand/logo-mark.png" width={96} height={96} style={{ animation: "bob 1.6s ease-in-out infinite" }} fallback={<div className="spinner" style={{ margin: "0 auto", width: 40, height: 40 }} />} />
         <p style={{ color: "var(--text-muted)", fontWeight: 600, marginTop: 14 }}>Loading your servers…</p>
       </div>
     </div>

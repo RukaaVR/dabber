@@ -68,7 +68,7 @@ try {
   // alice creates a server from a template
   await a.page.click("button[aria-label='Add a server']");
   await a.page.click("text=Gaming");
-  await a.page.fill("#server-name", "Game Night");
+  await a.page.fill("#server-name", `Game Night ${stamp}`);
   await shot(a.page, "create-server");
   await a.page.click(".modal-foot button:has-text('Create')");
   await a.page.waitForURL(/\/app\/s\/[a-z0-9]+\/[a-z0-9]+/);
@@ -174,12 +174,60 @@ try {
     "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAKElEQVR42mNkYPhfz0AEYBxVSF+FjP8ZiFIIVzxq4KjCUYWjCkcVEgsA0qcR0WmQzEUAAAAASUVORK5CYII=",
     "base64",
   );
-  await a.page.setInputFiles("input[type=file][multiple]", { name: "dot.png", mimeType: "image/png", buffer: png });
+  await a.page.setInputFiles(".composer input[type=file]", { name: "dot.png", mimeType: "image/png", buffer: png });
   await a.page.locator(".upload-tile").waitFor();
   await a.page.keyboard.press("Enter").catch(() => {});
   await a.page.click("button[aria-label='Send']");
   await b.page.locator(".msg-img img").first().waitFor({ timeout: 8000 });
   log("image attachment uploads and shows");
+
+  // poll: create + vote syncs
+  await a.page.click("button[aria-label='Upload or create']");
+  await a.page.click(".ctx-item:has-text('Create a poll')");
+  await a.page.fill("#poll-q", "Which game tonight?");
+  await a.page.fill("input[aria-label='Answer 1']", "Kart");
+  await a.page.fill("input[aria-label='Answer 2']", "Party");
+  await a.page.click(".modal-foot button:has-text('Post poll')");
+  await b.page.locator(".poll:has-text('Which game tonight?')").waitFor({ timeout: 8000 });
+  await b.page.click(".poll-opt:has-text('Party')");
+  await a.page.locator(".poll-sub:has-text('1 person voted')").waitFor({ timeout: 8000 });
+  await shot(b.page, "poll");
+  log("poll: create, vote, live results");
+
+  // invite link posted in chat renders an embed
+  await a.page.fill("textarea[placeholder='Message #general']", `come hang ${inviteUrl}`);
+  await a.page.keyboard.press("Enter");
+  await b.page.locator(".invite-embed .ie-name").last().waitFor({ timeout: 8000 });
+  log("invite links render an invite card");
+
+  // voice message (fake mic)
+  await b.page.click("button[aria-label='Record a voice message']");
+  await b.page.locator(".voice-rec").waitFor();
+  await b.page.waitForTimeout(1500);
+  await b.page.click("button[aria-label='Send voice message']");
+  await a.page.locator(".audio-player:has-text('Voice message')").waitFor({ timeout: 8000 });
+  log("voice message records, uploads and plays");
+
+  // drag to reorder channels (alice manages channels)
+  const before = await a.page.locator(".channel-row .ch-name").allTextContents();
+  await a.page.dragAndDrop(".channel-row:has-text('clips')", ".channel-row:has-text('general')");
+  await a.page.waitForFunction(
+    () => {
+      const names = [...document.querySelectorAll(".channel-row .ch-name")].map((e) => e.textContent);
+      return names.indexOf("clips") < names.indexOf("general");
+    },
+    null,
+    { timeout: 8000 },
+  );
+  log(`drag-to-reorder channels (${before.length} rows)`);
+
+  // mute server from the server menu
+  await a.page.click(".server-head");
+  await a.page.click(".ctx-item:has-text('Mute server')");
+  await a.page.locator(".server-head svg[aria-label='Muted']").waitFor();
+  await a.page.click(".server-head");
+  await a.page.click(".ctx-item:has-text('Unmute server')");
+  log("mute / unmute server");
 
   // members list + profile card
   await a.page.locator(".members .member-row").nth(1).waitFor();
@@ -216,10 +264,10 @@ try {
   log("DM delivered with unread badge");
 
   // voice channel
-  await a.page.click(".rail-item[aria-label^='Game Night']");
+  await a.page.click(`.rail-item[aria-label^='Game Night ${stamp}']`);
   await a.page.click(".channel-row:has-text('Lobby') .ch-main");
   await a.page.locator(".voice-panel").waitFor({ timeout: 10000 });
-  await b.page.click(".rail-item[aria-label^='Game Night']");
+  await b.page.click(`.rail-item[aria-label^='Game Night ${stamp}']`);
   await b.page.locator(".voice-person:has-text('Alice')").waitFor({ timeout: 8000 });
   await b.page.click(".channel-row:has-text('Lobby') .ch-main");
   await a.page.locator(".voice-tile").nth(1).waitFor({ timeout: 10000 });
@@ -273,7 +321,7 @@ try {
 
   // discover from bob's side
   await b.page.click("button[aria-label='Discover servers']");
-  await b.page.locator(".discovery-card:has-text('Game Night')").waitFor({ timeout: 8000 });
+  await b.page.locator(`.discovery-card:has-text('Game Night ${stamp}')`).waitFor({ timeout: 8000 });
   await shot(b.page, "discover");
   log("discover lists the public server");
 

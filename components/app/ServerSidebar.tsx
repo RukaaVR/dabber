@@ -1,11 +1,12 @@
 "use client";
 
-import { ChevronDown, Hash, Lock, MicOff, HeadphoneOff, Plus, Settings, UserPlus, Volume2 } from "lucide-react";
+import { BellOff, ChevronDown, Hash, Lock, MicOff, HeadphoneOff, Plus, Settings, UserPlus, Volume2 } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
-import { setPrefs, set, useStore, type State } from "@/lib/client/store";
+import { useState } from "react";
+import { setPrefs, set, toast, useStore, type State } from "@/lib/client/store";
 import { href, useNav } from "@/lib/client/route";
 import { displayName, isUnread, useCan } from "@/lib/client/selectors";
-import { api } from "@/lib/client/api";
+import { api, errMsg } from "@/lib/client/api";
 import { copy } from "@/lib/client/actions";
 import { joinVoice } from "@/lib/client/voice";
 import { Perm, hasPerm, type Channel } from "@/lib/types";
@@ -36,7 +37,21 @@ function VoicePeople({ channelId, serverId }: { channelId: string; serverId: str
   );
 }
 
-function ChannelRow({ c, active }: { c: Channel; active: boolean }) {
+let dragging: { kind: "channel" | "category"; id: string } | null = null;
+
+async function moveChannel(id: string, target: Channel, all: Channel[]) {
+  if (id === target.id) return;
+  const without = all.filter((x) => x.id !== id);
+  const idx = without.findIndex((x) => x.id === target.id);
+  try {
+    await api.patch(`channels/${id}`, { position: idx, categoryId: target.categoryId });
+  } catch (e) {
+    toast(errMsg(e), "error");
+  }
+}
+
+function ChannelRow({ c, active, all }: { c: Channel; active: boolean; all: Channel[] }) {
+  const [over, setOver] = useState(false);
   const unread = useStore((s) => c.type === "text" && isUnread(s, c.id));
   const mentions = useStore((s) => s.mentionCounts[c.id] ?? 0);
   const canManage = useCan(c.serverId, Perm.MANAGE_CHANNELS);
@@ -74,7 +89,30 @@ function ChannelRow({ c, active }: { c: Channel; active: boolean }) {
   const Icon = c.type === "voice" ? Volume2 : Hash;
   return (
     <>
-      <div className={`channel-row${active ? " active" : ""}${unread && !active ? " unread" : ""}`} onContextMenu={onCtx}>
+      <div
+        className={`channel-row${active ? " active" : ""}${unread && !active ? " unread" : ""}${over ? " drop-target" : ""}`}
+        onContextMenu={onCtx}
+        draggable={canManage}
+        onDragStart={(e) => {
+          dragging = { kind: "channel", id: c.id };
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", c.name);
+        }}
+        onDragEnd={() => (dragging = null)}
+        onDragOver={(e) => {
+          if (dragging?.kind !== "channel" || dragging.id === c.id) return;
+          e.preventDefault();
+          setOver(true);
+        }}
+        onDragLeave={() => setOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setOver(false);
+          if (dragging?.kind === "channel") void moveChannel(dragging.id, c, all);
+          dragging = null;
+        }}
+        title={canManage ? "Drag to rearrange" : undefined}
+      >
         <button className="ch-main" onClick={open} aria-current={active ? "page" : undefined} aria-label={`${c.name} (${c.type === "voice" ? "voice" : "text"} channel)${unread ? ", unread" : ""}`}>
           <Icon size={18} style={{ flexShrink: 0 }} />
           <span className="ch-name">{c.name}</span>
@@ -121,6 +159,8 @@ export function ServerSidebar({ serverId, channelId }: { serverId: string; chann
     ),
   );
   const collapsed = useStore((s) => s.prefs.collapsed);
+  const muted = useStore((s) => !!s.prefs.mutedServers[serverId]);
+  const [overCat, setOverCat] = useState<string | null>(null);
   const nav = useNav();
   if (!server)
     return (
@@ -157,6 +197,11 @@ export function ServerSidebar({ serverId, channelId }: { serverId: string; chann
             : []),
           { sep: true, label: "" },
           { label: "Mark all as read", onClick: () => void api.post(`servers/${serverId}/read`).catch(() => {}) },
+          {
+            label: muted ? "Unmute server" : "Mute server",
+            hint: muted ? undefined : "Only mentions ping",
+            onClick: () => setPrefs({ mutedServers: { ...useStore.getState().prefs.mutedServers, [serverId]: !muted } }),
+          },
           { label: "Copy server ID", onClick: () => copy(serverId, "Server ID copied") },
           ...(server.ownerId !== me?.id ? [{ sep: true, label: "" }, { label: "Leave server", danger: true, onClick: () => leaveServerFlow(serverId) }] : []),
         ],
@@ -171,10 +216,21 @@ export function ServerSidebar({ serverId, channelId }: { serverId: string; chann
 
   return (
     <aside className="sidebar" aria-label={`${server.name} channels`}>
-      <button className="server-head" onClick={openMenu} aria-haspopup="menu">
-        <span className="name">{server.name}</span>
-        <ChevronDown size={18} />
-      </button>
+      {server.bannerColor ? (
+        <div className="server-banner" style={{ background: `linear-gradient(160deg, ${server.bannerColor}, color-mix(in srgb, ${server.bannerColor} 40%, var(--bg-side)))` }}>
+          <button className="server-head" onClick={openMenu} aria-haspopup="menu">
+            <span className="name">{server.name}</span>
+            {muted && <BellOff size={15} aria-label="Muted" style={{ opacity: 0.8 }} />}
+            <ChevronDown size={18} />
+          </button>
+        </div>
+      ) : (
+        <button className="server-head" onClick={openMenu} aria-haspopup="menu">
+          <span className="name">{server.name}</span>
+          {muted && <BellOff size={15} aria-label="Muted" style={{ opacity: 0.6 }} />}
+          <ChevronDown size={18} />
+        </button>
+      )}
       <div className="sidebar-scroll">
         {channels.length === 0 && (
           <p style={{ color: "var(--text-faint)", fontSize: 13, padding: "10px 8px" }}>
@@ -197,7 +253,41 @@ export function ServerSidebar({ serverId, channelId }: { serverId: string; chann
             <div key={g.id ?? "none"} role="group" aria-label={g.name ?? "Channels"}>
               {g.id && (
                 <div
-                  className={`cat-row${isCollapsed ? " collapsed" : ""}`}
+                  className={`cat-row${isCollapsed ? " collapsed" : ""}${overCat === g.id ? " drop-target" : ""}`}
+                  draggable={canManage}
+                  onDragStart={(e) => {
+                    dragging = { kind: "category", id: g.id! };
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", g.name ?? "");
+                  }}
+                  onDragEnd={() => (dragging = null)}
+                  onDragOver={(e) => {
+                    if (!dragging) return;
+                    if (dragging.kind === "category" && dragging.id === g.id) return;
+                    e.preventDefault();
+                    setOverCat(g.id);
+                  }}
+                  onDragLeave={() => setOverCat(null)}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setOverCat(null);
+                    const d = dragging;
+                    dragging = null;
+                    if (!d) return;
+                    try {
+                      if (d.kind === "category") {
+                        const idx = cats.filter((k) => k.id !== d.id).findIndex((k) => k.id === g.id);
+                        await api.patch(`categories/${d.id}`, { position: idx });
+                      } else {
+                        // dropping a channel on a category header moves it to the top of that category
+                        const first = g.list[0];
+                        if (first) await moveChannel(d.id, first, channels);
+                        else await api.patch(`channels/${d.id}`, { categoryId: g.id });
+                      }
+                    } catch (err) {
+                      toast(errMsg(err), "error");
+                    }
+                  }}
                   onContextMenu={(e) => {
                     if (!canManage) return;
                     e.preventDefault();
@@ -235,7 +325,7 @@ export function ServerSidebar({ serverId, channelId }: { serverId: string; chann
                 </div>
               )}
               {visible.map((c) => (
-                <ChannelRow key={c.id} c={c} active={c.id === channelId} />
+                <ChannelRow key={c.id} c={c} active={c.id === channelId} all={channels} />
               ))}
             </div>
           );

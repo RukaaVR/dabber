@@ -11,6 +11,7 @@ import type { Channel } from "@/lib/types";
 import { UserAvatar } from "../ui/Avatar";
 import { Tip } from "../ui/Tip";
 import { BackButton } from "./BackButton";
+import { Img } from "../ui/Img";
 
 function Video({ stream, muted = true }: { stream: MediaStream; muted?: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
@@ -169,8 +170,7 @@ export function VoiceView({ channel }: { channel: Channel }) {
       {people.length === 0 ? (
         <div className="voice-empty">
           <div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/illustrations/voice.png" alt="" />
+            <Img src="/illustrations/voice.png" />
             <h2>No one’s here yet</h2>
             <p style={{ margin: 0 }}>Jump in and wait for people to show up.</p>
           </div>

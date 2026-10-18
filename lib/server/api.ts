@@ -452,7 +452,8 @@ r.delete("servers/:id", (ctx) => {
   if (s!.owner_id !== uid) fail(403, "Only the owner can delete the server.");
   const members = serverMemberIds(s!.id);
   db().prepare("DELETE FROM servers WHERE id = ?").run(s!.id);
-  emitToUsers(members, "server:delete", { id: s!.id });
+  emitToUsers(members.filter((m) => m !== uid), "server:delete", { id: s!.id, name: s!.name, reason: "deleted" });
+  emitToUsers([uid], "server:delete", { id: s!.id });
   return { ok: true };
 });
 
@@ -520,7 +521,7 @@ r.delete("servers/:id/members/:userId", (ctx) => {
   const { id: sid, userId: target } = ctx.params;
   if (!isMember(sid, target)) fail(404, "Member not found");
   assertCanModerate(sid, uid, target, Perm.KICK);
-  removeMember(sid, target);
+  removeMember(sid, target, "kicked");
   return { ok: true };
 });
 
@@ -547,7 +548,7 @@ r.put("servers/:id/bans/:userId", async (ctx) => {
       for (const mid of ids) emitToServer(sid, "message:delete", { id: mid, channelId: cid });
     }
   }
-  if (isMember(sid, target)) removeMember(sid, target);
+  if (isMember(sid, target)) removeMember(sid, target, "banned");
   return { ok: true };
 });
 
@@ -986,12 +987,56 @@ r.post("channels/:id/messages", async (ctx) => {
   return { message: msg };
 });
 
+r.post("channels/:id/polls", async (ctx) => {
+  const uid = ctx.uid();
+  rateLimit(`msg:${uid}`, 10, 5_000);
+  const { row, perms } = channelAccess(ctx.params.id, uid);
+  if (row.type === "voice") fail(400, "This is a voice channel.");
+  if (!hasPerm(perms, Perm.SEND_MESSAGES)) fail(403, "You can’t send messages here.");
+  const b = await ctx.json<Record<string, unknown>>();
+  const question = str(b.question, "Question", { min: 1, max: 300 });
+  const options = Array.isArray(b.options) ? b.options.map((o) => (typeof o === "string" ? o.trim() : "")).filter(Boolean) : [];
+  if (options.length < 2) fail(400, "Add at least two answers.");
+  if (options.length > 10) fail(400, "Polls can have up to 10 answers.");
+  if (options.some((o) => o.length > 80)) fail(400, "Answers can be at most 80 characters.");
+  const id = newId();
+  db().transaction(() => {
+    db().prepare("INSERT INTO messages (id, channel_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)").run(id, row.id, uid, "", now());
+    db().prepare("INSERT INTO polls (message_id, question, options, multi) VALUES (?, ?, ?, ?)").run(id, question, JSON.stringify(options), b.multi ? 1 : 0);
+    db().prepare("UPDATE channels SET last_message_id = ? WHERE id = ?").run(id, row.id);
+    db().prepare("INSERT OR REPLACE INTO read_states (user_id, channel_id, last_read_id) VALUES (?, ?, ?)").run(uid, row.id, id);
+  })();
+  const [msg] = hydrateMessages([messageRow(id)!], uid);
+  emitToUsers(channelAudience(row), "message:create", { message: msg });
+  return { message: msg };
+});
+
+r.put("messages/:id/poll", async (ctx) => {
+  const uid = ctx.uid();
+  const m = messageRow(ctx.params.id);
+  if (!m) fail(404, "Poll not found");
+  channelAccess(m!.channel_id, uid);
+  const poll = db().prepare("SELECT * FROM polls WHERE message_id = ?").get(m!.id) as Row | undefined;
+  if (!poll) fail(404, "Poll not found");
+  const b = await ctx.json<Record<string, unknown>>();
+  const count = (JSON.parse(poll!.options) as string[]).length;
+  let picks = Array.isArray(b.options) ? [...new Set(b.options.filter((x): x is number => Number.isInteger(x) && x >= 0 && x < count))] : [];
+  if (!poll!.multi) picks = picks.slice(0, 1);
+  db().transaction(() => {
+    db().prepare("DELETE FROM poll_votes WHERE message_id = ? AND user_id = ?").run(m!.id, uid);
+    for (const i of picks) db().prepare("INSERT INTO poll_votes (message_id, user_id, option_index) VALUES (?, ?, ?)").run(m!.id, uid, i);
+  })();
+  broadcastMessage(m!.id, "message:update");
+  return { ok: true };
+});
+
 r.patch("messages/:id", async (ctx) => {
   const uid = ctx.uid();
   const m = messageRow(ctx.params.id);
   if (!m) fail(404, "Message not found");
   channelAccess(m!.channel_id, uid);
   if (m!.author_id !== uid || m!.type !== "default") fail(403, "You can only edit your own messages.");
+  if (db().prepare("SELECT 1 FROM polls WHERE message_id = ?").get(m!.id)) fail(400, "Polls can’t be edited.");
   const b = await ctx.json<Record<string, unknown>>();
   const content = str(b.content, "Message", { min: 0, max: LIMITS.messageLength });
   const hasAtt = db().prepare("SELECT 1 FROM attachments WHERE message_id = ?").get(m!.id);

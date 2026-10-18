@@ -25,6 +25,7 @@ let booting: Promise<void> | null = null;
 export function boot(): Promise<void> {
   if (booting) return booting;
   loadPrefs();
+  if (window.matchMedia("(max-width: 1000px)").matches) set({ membersOpen: false });
   booting = (async () => {
     try {
       const b = await api.get<Bootstrap>("bootstrap");

@@ -130,14 +130,21 @@ export function MessageList({
       });
     }
     if (el.scrollHeight - el.scrollTop - el.clientHeight < 300 && cm.hasMoreAfter && !cm.loading) void loadNewer(channelId);
+    if (atBottom.current) setUnseen(0);
     if (atBottom.current && document.hasFocus()) markRead(channelId);
   }, [cm, channelId]);
 
   // mark read when opening / when new messages arrive while at bottom
   const lastId = list[list.length - 1]?.id;
+  const lastAuthor = list[list.length - 1]?.authorId;
+  const prevLast = useRef(lastId);
+  const [unseen, setUnseen] = useState(0);
   useEffect(() => {
     if (atBottom.current && document.visibilityState === "visible") markRead(channelId);
-  }, [lastId, channelId]);
+    if (prevLast.current && lastId && lastId !== prevLast.current && !atBottom.current && !cm?.hasMoreAfter && lastAuthor !== useStore.getState().me?.id)
+      setUnseen((n) => n + 1);
+    prevLast.current = lastId;
+  }, [lastId, channelId, lastAuthor, cm?.hasMoreAfter]);
   useEffect(() => {
     const onFocus = () => atBottom.current && markRead(channelId);
     window.addEventListener("focus", onFocus);
@@ -228,6 +235,18 @@ export function MessageList({
           )}
         </div>
       </div>
+      {unseen > 0 && !cm.hasMoreAfter && (
+        <button
+          className="new-pill"
+          onClick={() => {
+            const el = ref.current;
+            if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+            setUnseen(0);
+          }}
+        >
+          {unseen} new message{unseen === 1 ? "" : "s"} ↓
+        </button>
+      )}
       {cm.hasMoreAfter && (
         <div className="jump-present" role="status">
           You’re viewing older messages

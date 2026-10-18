@@ -3,6 +3,7 @@ import { THEME_BOOT_SCRIPT } from "@/lib/client/theme";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 3000}`),
   title: "Dabber",
   description: "Chat, servers, voice and screen sharing with your people. Free.",
   applicationName: "Dabber",

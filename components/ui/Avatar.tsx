@@ -2,6 +2,7 @@
 
 import { useStore } from "@/lib/client/store";
 import { colorFor, initials } from "@/lib/client/theme";
+import { Img } from "./Img";
 import type { PublicUser } from "@/lib/types";
 
 const DOT: Record<number, number> = { 16: 8, 20: 9, 24: 10, 32: 12, 36: 13, 40: 14, 48: 16, 80: 22, 96: 26, 120: 30 };
@@ -34,8 +35,20 @@ export function UserAvatar({
   const dot = DOT[size] ?? Math.max(8, Math.round(size * 0.3));
   return (
     <span className={`avatar${speaking ? " speaking" : ""}`} style={{ width: size, height: size }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="av-img" src={avatarSrc(u)} alt="" width={size} height={size} loading="lazy" draggable={false} />
+      <Img
+        key={avatarSrc(u)}
+        className="av-img"
+        src={avatarSrc(u)}
+        width={size}
+        height={size}
+        loading="lazy"
+        draggable={false}
+        fallback={
+          <span className="av-letter" style={{ background: colorFor(u?.avatarSeed ?? 0), fontSize: Math.max(9, size * 0.4) }}>
+            {initials(u?.displayName ?? "?").slice(0, 1).toUpperCase()}
+          </span>
+        }
+      />
       {status && (
         <span
           className={`status-dot ${st}`}
@@ -71,8 +84,7 @@ export function ServerIcon({
         fontSize: Math.max(11, Math.round(size / (initials(name).length > 2 ? 3.4 : 2.6))),
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {icon ? <img src={icon} alt="" draggable={false} /> : initials(name)}
+      {icon ? <Img key={icon} src={icon} draggable={false} fallback={initials(name)} /> : initials(name)}
     </span>
   );
 }

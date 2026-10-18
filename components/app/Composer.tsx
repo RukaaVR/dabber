@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Paperclip, SendHorizontal, Smile, X } from "lucide-react";
+import { FileText, PlusCircle, SendHorizontal, Smile, X } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { get, set, toast, useStore, type State } from "@/lib/client/store";
 import { sendMessage } from "@/lib/client/actions";
@@ -11,6 +11,8 @@ import { plainText } from "@/lib/client/markdown";
 import { openEmojiPicker } from "../overlays/EmojiPicker";
 import { fromEditable, fmtSize } from "./MessageItem";
 import { UserAvatar } from "../ui/Avatar";
+import { VoiceRecorder } from "./VoiceRecorder";
+import { CreatePollModal } from "./Poll";
 import { Tip } from "../ui/Tip";
 import { LIMITS } from "@/lib/types";
 
@@ -45,6 +47,8 @@ export function Composer({
   const [text, setText] = useState(() => get().drafts[channelId] ?? "");
   const [mention, setMention] = useState<{ q: string; start: number } | null>(null);
   const [sel, setSel] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [pollOpen, setPollOpen] = useState(false);
   const ref = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const lastTyping = useRef(0);
@@ -281,26 +285,45 @@ export function Composer({
         </div>
       )}
       <div className="composer-box">
-        {canAttach && (
-          <>
-            <Tip label="Upload a file">
-              <button className="icon-btn" aria-label="Upload a file" onClick={() => fileRef.current?.click()}>
-                <Paperclip size={20} />
-              </button>
-            </Tip>
-            <input
-              ref={fileRef}
-              type="file"
-              multiple
-              hidden
-              onChange={(e) => {
-                if (e.target.files) addFiles(e.target.files);
-                e.target.value = "";
+        {!recording && (
+          <Tip label="Upload or create">
+            <button
+              className="icon-btn"
+              aria-label="Upload or create"
+              aria-haspopup="menu"
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                set({
+                  ctx: {
+                    x: r.left,
+                    y: r.top - 8,
+                    items: [
+                      ...(canAttach ? [{ label: "📎  Upload a file", onClick: () => fileRef.current?.click() }] : []),
+                      { label: "📊  Create a poll", onClick: () => setPollOpen(true) },
+                    ],
+                  },
+                });
               }}
-            />
-          </>
+            >
+              <PlusCircle size={21} />
+            </button>
+          </Tip>
+        )}
+        {canAttach && (
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            hidden
+            aria-label="Upload a file"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
         )}
         <textarea
+          hidden={recording}
           ref={ref}
           value={text}
           rows={1}
@@ -327,30 +350,46 @@ export function Composer({
             }
           }}
         />
-        <Tip label="Emoji">
-          <button
-            className="icon-btn"
-            aria-label="Emoji"
-            onClick={(e) =>
-              openEmojiPicker(e.currentTarget, (emoji) => {
-                const el = ref.current;
-                const pos = el?.selectionStart ?? text.length;
-                const next = text.slice(0, pos) + emoji + text.slice(pos);
-                setText(next);
-                requestAnimationFrame(() => {
-                  el?.focus();
-                  el?.setSelectionRange(pos + emoji.length, pos + emoji.length);
-                });
-              }, true)
-            }
-          >
-            <Smile size={20} />
+        {!recording && (
+          <Tip label="Emoji">
+            <button
+              className="icon-btn"
+              aria-label="Emoji"
+              onClick={(e) =>
+                openEmojiPicker(
+                  e.currentTarget,
+                  (emoji) => {
+                    const el = ref.current;
+                    const pos = el?.selectionStart ?? text.length;
+                    const next = text.slice(0, pos) + emoji + text.slice(pos);
+                    setText(next);
+                    requestAnimationFrame(() => {
+                      el?.focus();
+                      el?.setSelectionRange(pos + emoji.length, pos + emoji.length);
+                    });
+                  },
+                  true,
+                )
+              }
+            >
+              <Smile size={20} />
+            </button>
+          </Tip>
+        )}
+        {canAttach && !text.trim() && !files.length ? (
+          <VoiceRecorder
+            onActive={setRecording}
+            onSend={(f) => {
+              void sendMessage(channelId, "", [f]);
+            }}
+          />
+        ) : (
+          <button className="send-btn" aria-label="Send" disabled={!text.trim() && !files.length} onClick={submit}>
+            <SendHorizontal size={18} />
           </button>
-        </Tip>
-        <button className="send-btn" aria-label="Send" disabled={!text.trim() && !files.length} onClick={submit}>
-          <SendHorizontal size={18} />
-        </button>
+        )}
       </div>
+      {pollOpen && <CreatePollModal channelId={channelId} onClose={() => setPollOpen(false)} />}
       <div className="typing-line" aria-live="polite">
         {typingText && (
           <>

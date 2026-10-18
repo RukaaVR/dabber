@@ -57,7 +57,10 @@ export function attachSocket(io: IOServer) {
     if (pending) {
       clearTimeout(pending);
       offlineTimers.delete(uid);
-    } else if (wasOffline) broadcastUser(uid);
+    }
+    // Always announce the first socket: people who joined a shared server while we
+    // were briefly offline (page change) would otherwise keep seeing us offline.
+    if (wasOffline) broadcastUser(uid);
 
     socket.on("typing", (p: { channelId?: string }) => {
       if (typeof p?.channelId !== "string") return;

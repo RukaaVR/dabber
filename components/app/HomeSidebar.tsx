@@ -75,7 +75,10 @@ export function HomeSidebar() {
         </button>
       </div>
       <div className="sidebar-scroll">
-        <button className={`nav-row${route.kind === "home" ? " active" : ""}`} onClick={() => nav(href.friends())}>
+        <button
+          className={`nav-row${route.kind === "home" ? " active" : ""}${route.kind === "home" && !route.friends ? " home-default" : ""}`}
+          onClick={() => nav(href.friends())}
+        >
           <Users size={20} /> Friends
           {pending > 0 && <span className="count">{pending}</span>}
         </button>

@@ -11,6 +11,9 @@ import { UserAvatar } from "../ui/Avatar";
 import { Tip } from "../ui/Tip";
 import { openProfile } from "../overlays/ProfileCard";
 import { openEmojiPicker } from "../overlays/EmojiPicker";
+import { InviteEmbed, inviteCodes } from "./InviteEmbed";
+import { PollCard } from "./Poll";
+import { AudioPlayer } from "./AudioPlayer";
 import type { Message } from "@/lib/types";
 
 export function fmtTime(ts: number) {
@@ -129,12 +132,7 @@ function Attachments({ m }: { m: Message }) {
             </div>
           );
         if (a.mime.startsWith("audio/") && a.url)
-          return (
-            <div key={a.id} className="msg-file" style={{ flexDirection: "column", alignItems: "stretch" }}>
-              <div className="f-name">{a.filename}</div>
-              <audio src={a.url} controls preload="metadata" style={{ width: "100%" }} />
-            </div>
-          );
+          return <AudioPlayer key={a.id} src={a.url} filename={a.filename} label={a.filename.startsWith("voice-message") ? "Voice message" : a.filename} />;
         return (
           <div key={a.id} className="msg-file">
             <FileText size={28} style={{ color: "var(--accent-text)", flexShrink: 0 }} />
@@ -299,7 +297,7 @@ function MessageItemInner({ m, grouped, serverId, canManage, canReact, canPin, c
                 },
               ]
             : []),
-          ...(mine ? [{ label: "Edit message", onClick: () => set({ editing: m.id }) }] : []),
+          ...(mine && !m.poll ? [{ label: "Edit message", onClick: () => set({ editing: m.id }) }] : []),
           { label: "Reply", onClick: () => startReply(m) },
           ...(canPin ? [{ label: m.pinned ? "Unpin message" : "Pin message", onClick: () => void setPinned(m, !m.pinned) }] : []),
           { label: "Copy text", onClick: () => copy(plainText(m.content, mentionName), "Text copied") },
@@ -393,7 +391,9 @@ function MessageItemInner({ m, grouped, serverId, canManage, canReact, canPin, c
             </div>
           )
         )}
+        {m.poll && <PollCard m={m} poll={m.poll} />}
         <Attachments m={m} />
+        {!pending && inviteCodes(m.content).map((code) => <InviteEmbed key={code} code={code} />)}
         {failed && (
           <div style={{ fontSize: 13, color: "var(--danger)", marginTop: 2, display: "flex", gap: 10 }}>
             Didn’t send.
@@ -421,7 +421,7 @@ function MessageItemInner({ m, grouped, serverId, canManage, canReact, canPin, c
               </button>
             </Tip>
           )}
-          {mine ? (
+          {mine && !m.poll ? (
             <Tip label="Edit">
               <button className="icon-btn" aria-label="Edit" onClick={() => set({ editing: m.id })}>
                 <Pencil size={17} />

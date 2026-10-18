@@ -1,7 +1,8 @@
 "use client";
 
-import { Compass, Plus, Volume2 } from "lucide-react";
-import { set, useStore, type State } from "@/lib/client/store";
+import { Compass, MessageCircle, Plus, Volume2 } from "lucide-react";
+import { Img } from "../ui/Img";
+import { set, setPrefs, useStore, type State } from "@/lib/client/store";
 import { href, useNav, useRoute } from "@/lib/client/route";
 import { channelLabel, dmChannels, serverUnread } from "@/lib/client/selectors";
 import { api } from "@/lib/client/api";
@@ -20,6 +21,7 @@ function ServerButton({ id, active }: { id: string; active: boolean }) {
     return !!cid && s.channels[cid]?.serverId === id;
   });
   const lastChannel = useStore((s) => s.prefs.lastChannel[id]);
+  const muted = useStore((s) => !!s.prefs.mutedServers[id]);
   const nav = useNav();
   if (!server) return null;
   const open = () => nav(href.server(id, lastChannel ?? null));
@@ -32,6 +34,11 @@ function ServerButton({ id, active }: { id: string; active: boolean }) {
         y: e.clientY,
         items: [
           { label: "Mark as read", onClick: () => void api.post(`servers/${id}/read`).catch(() => {}) },
+          {
+            label: muted ? "Unmute server" : "Mute server",
+            hint: muted ? undefined : "Only mentions ping",
+            onClick: () => setPrefs({ mutedServers: { ...useStore.getState().prefs.mutedServers, [id]: !muted } }),
+          },
           { sep: true, label: "" },
           ...(hasPerm(p, Perm.CREATE_INVITE) ? [{ label: "Invite people", onClick: () => set({ modal: { kind: "invite", serverId: id } }) }] : []),
           ...(hasPerm(p, Perm.MANAGE_SERVER) || hasPerm(p, Perm.MANAGE_ROLES) || hasPerm(p, Perm.BAN)
@@ -45,7 +52,7 @@ function ServerButton({ id, active }: { id: string; active: boolean }) {
     });
   };
   return (
-    <div className={`rail-wrap${active ? " active" : ""}${unread && !active ? " unread" : ""}`}>
+    <div className={`rail-wrap${active ? " active" : ""}${unread && !active && !muted ? " unread" : ""}${muted ? " muted" : ""}`}>
       <span className="rail-pill" />
       <Tip label={server.name} side="right">
         <button
@@ -113,8 +120,7 @@ export function Rail() {
         <span className="rail-pill" />
         <Tip label="Direct Messages" side="right">
           <button className="rail-item home" onClick={() => nav(href.home())} aria-label="Direct messages" aria-current={homeActive ? "page" : undefined}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/brand/logo-mark.png" alt="" draggable={false} />
+            <Img src="/brand/logo-mark.png" draggable={false} fallback={<MessageCircle size={24} />} />
             {pending > 0 && <span className="rail-badge">{pending}</span>}
           </button>
         </Tip>

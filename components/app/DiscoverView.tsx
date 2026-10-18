@@ -11,6 +11,7 @@ import type { DiscoverServer } from "@/lib/types";
 import { ServerIcon } from "../ui/Avatar";
 import { Empty } from "../ui/Empty";
 import { BackButton } from "./BackButton";
+import { Img } from "../ui/Img";
 
 export function DiscoverView() {
   const [q, setQ] = useState("");
@@ -66,7 +67,8 @@ export function DiscoverView() {
         </div>
       </header>
       <div className="discover">
-        <section className="discovery-hero" style={{ backgroundImage: "url(/illustrations/discover-hero.png)" }}>
+        <section className="discovery-hero">
+          <Img className="dh-art" src="/illustrations/discover-hero.png" />
           <div>
             <h1>Find your people</h1>
             <p>Public servers on Dabber. Search by name or topic, then hop right in.</p>
