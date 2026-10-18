@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { Crown } from "lucide-react";
+import { loadMembers } from "@/lib/client/actions";
 import { useShallow } from "zustand/react/shallow";
 import { useStore, type State } from "@/lib/client/store";
 import { displayName, roleColor, sortedRoles } from "@/lib/client/selectors";
@@ -76,6 +78,9 @@ export function MembersList({ serverId, channel }: { serverId: string; channel: 
     }),
   );
   const ownerId = useStore((s) => s.servers[serverId]?.ownerId);
+  useEffect(() => {
+    if (!loaded) void loadMembers(serverId);
+  }, [loaded, serverId]);
   return (
     <aside className="members" aria-label="Members">
       {!loaded

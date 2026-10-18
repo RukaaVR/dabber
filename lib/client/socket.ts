@@ -30,9 +30,6 @@ let activeChannel: string | null = null;
 export function setActiveChannel(id: string | null) {
   activeChannel = id;
 }
-export function getActiveChannel() {
-  return activeChannel;
-}
 
 function focused() {
   return typeof document !== "undefined" && document.visibilityState === "visible" && document.hasFocus();

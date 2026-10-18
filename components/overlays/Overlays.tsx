@@ -346,6 +346,11 @@ function ConnectionBanner() {
 export function Overlays() {
   const settingsOpen = useStore((s) => s.settingsOpen);
   const serverSettings = useStore((s) => s.serverSettings);
+  const modalOpen = useStore((s) => !!s.modal);
+  // a modal launched from a profile card replaces it
+  useEffect(() => {
+    if (modalOpen) set({ profile: null });
+  }, [modalOpen]);
   return (
     <>
       {settingsOpen && <SettingsScreen />}

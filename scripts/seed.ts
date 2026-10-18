@@ -71,6 +71,7 @@ async function main() {
       (db.prepare("SELECT id FROM channels WHERE server_id = ? AND name = 'general'").get(id) as { id: string } | undefined)?.id ??
       firstChannelId;
     if (!general) continue;
+    db.prepare("DELETE FROM messages WHERE type = 'join' AND channel_id IN (SELECT id FROM channels WHERE server_id = ?)").run(id);
     for (const [who, text] of s.chat) {
       const mid = newId();
       db.prepare("INSERT INTO messages (id, channel_id, author_id, content, created_at) VALUES (?, ?, ?, ?, ?)").run(mid, general, ids[who], text, Date.now());

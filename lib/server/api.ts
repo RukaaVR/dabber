@@ -41,11 +41,10 @@ import {
   removeMember,
   serverState,
   systemMessage,
-  TEMPLATES,
 } from "./actions";
 import { checkPassword, clearSessionCookie, createSession, destroySession, hashPassword, parseCookies, SESSION_COOKIE, sessionCookie } from "./auth";
 import { saveUpload, serveUpload } from "./files";
-import { emitToServer, emitToUsers, hub, isOnline, onlineUserIds } from "./realtime";
+import { emitToServer, emitToUsers, forceLeaveVoice, isOnline, onlineUserIds, voiceStates } from "./realtime";
 import { LIMITS, Perm, hasPerm, type DiscoverServer, type InviteInfo } from "../types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -90,8 +89,6 @@ r.get("stats", () => {
   return { online: onlineUserIds().length, users };
 });
 
-r.get("templates", () => Object.entries(TEMPLATES).map(([key, t]) => ({ key, label: t.label })));
-
 // ---------------- auth ----------------
 
 r.post("auth/signup", async (ctx) => {
@@ -135,6 +132,8 @@ r.get("auth/username-available", (ctx) => {
   if (!USERNAME_RE.test(u)) return { available: false, valid: false };
   return { available: !db().prepare("SELECT 1 FROM users WHERE username = ?").get(u), valid: true };
 });
+
+r.get("auth/session", (ctx) => ({ signedIn: !!ctx.userId && !!userRow(ctx.userId) }));
 
 r.get("bootstrap", (ctx) => {
   const data = bootstrap(ctx.uid());
@@ -213,16 +212,6 @@ r.post("users/me/delete", async (ctx) => {
   db().prepare("DELETE FROM users WHERE id = ?").run(uid);
   emitToUsers(audience, "user:remove", { userId: uid });
   return withCookie({ ok: true }, clearSessionCookie());
-});
-
-r.get("users/search", (ctx) => {
-  ctx.uid();
-  const q = (ctx.url.searchParams.get("q") ?? "").trim().toLowerCase();
-  if (q.length < 2) return [];
-  const rows = db()
-    .prepare("SELECT * FROM users WHERE username LIKE ? ESCAPE '\\' OR lower(display_name) LIKE ? ESCAPE '\\' LIMIT 20")
-    .all(`${q.replace(/[%_\\]/g, "\\$&")}%`, `%${q.replace(/[%_\\]/g, "\\$&")}%`) as Row[];
-  return rows.map(toPublicUser);
 });
 
 r.get("users/:id", (ctx) => {
@@ -451,6 +440,8 @@ r.delete("servers/:id", (ctx) => {
   if (!s || !isMember(s.id, uid)) fail(404, "Server not found");
   if (s!.owner_id !== uid) fail(403, "Only the owner can delete the server.");
   const members = serverMemberIds(s!.id);
+  const chans = new Set((db().prepare("SELECT id FROM channels WHERE server_id = ?").all(s!.id) as Row[]).map((c) => c.id));
+  for (const v of voiceStates().filter((x) => chans.has(x.channelId))) forceLeaveVoice(v.userId, members, "The server was deleted.");
   db().prepare("DELETE FROM servers WHERE id = ?").run(s!.id);
   emitToUsers(members.filter((m) => m !== uid), "server:delete", { id: s!.id, name: s!.name, reason: "deleted" });
   emitToUsers([uid], "server:delete", { id: s!.id });
@@ -763,6 +754,8 @@ r.delete("channels/:id", (ctx) => {
   const { row } = channelAccess(ctx.params.id, uid);
   if (!row.server_id) fail(400, "Use leave for groups.");
   requirePerm(row.server_id, uid, Perm.MANAGE_CHANNELS);
+  const audience = serverMemberIds(row.server_id);
+  for (const v of voiceStates().filter((x) => x.channelId === row.id)) forceLeaveVoice(v.userId, audience, "That voice channel was deleted.");
   db().prepare("DELETE FROM channels WHERE id = ?").run(row.id);
   emitToServer(row.server_id, "channel:delete", { id: row.id, serverId: row.server_id });
   return { ok: true };
@@ -1205,12 +1198,5 @@ r.post("upload", async (ctx) => {
 });
 
 r.get("files/:name", (ctx) => serveUpload(ctx.params.name));
-
-// ---------------- voice (http helpers) ----------------
-
-r.get("voice", (ctx) => {
-  ctx.uid();
-  return { states: [...hub().voice.values()] };
-});
 
 export const api = r;

@@ -23,7 +23,13 @@ async function shot(page, name) {
 
 const browser = await chromium.launch({
   executablePath: exe,
-  args: ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"],
+  args: [
+    "--use-fake-device-for-media-stream",
+    "--use-fake-ui-for-media-stream",
+    "--autoplay-policy=no-user-gesture-required",
+    "--auto-select-desktop-capture-source=Entire screen",
+    "--enable-usermedia-screen-capturing",
+  ],
 });
 
 async function newUser(name) {
@@ -263,6 +269,24 @@ try {
   await shot(a.page, "dm");
   log("DM delivered with unread badge");
 
+  // DM call: alice rings bob, bob accepts from the ring card
+  await a.page.click("button[aria-label='Start voice call']");
+  await b.page.locator(".ring-card").waitFor({ timeout: 8000 });
+  await shot(b.page, "ring");
+  await b.page.click(".ring-card button[aria-label='Accept']");
+  await a.page.locator(".dm-call .voice-tile").nth(1).waitFor({ timeout: 10000 });
+  await shot(a.page, "dm-call");
+  await a.page.click(".dm-call .call-btn.hang");
+  await b.page.click(".dm-call .call-btn.hang");
+  log("DM call: ring, accept, both connected, hang up");
+
+  // group DM with the one friend, then rename and leave
+  await a.page.click("button[aria-label='Create a group']");
+  await a.page.click(".modal .pick-row:has-text('Bob')");
+  await a.page.click(".modal-foot button:has-text('Create DM')");
+  await a.page.waitForURL(/\/app\/dm\//);
+  log("create DM from the + picker");
+
   // voice channel
   await a.page.click(`.rail-item[aria-label^='Game Night ${stamp}']`);
   await a.page.click(".channel-row:has-text('Lobby') .ch-main");
@@ -278,6 +302,19 @@ try {
   });
   await shot(a.page, "voice");
   log(`voice: both joined (${remote} tiles)`);
+  // screen share: bob sees LIVE and can watch
+  await a.page.click(".call-btn[aria-label='Share screen']");
+  await b.page.locator(".voice-person:has-text('Alice') .live-chip").waitFor({ timeout: 10000 });
+  await b.page.locator(".voice-tile:has-text('Alice') .live-chip").waitFor({ timeout: 10000 });
+  await b.page.click(".voice-tile:has-text('Alice')");
+  await b.page.locator(".stream-main video").waitFor({ timeout: 10000 });
+  await b.page.waitForFunction(() => {
+    const v = document.querySelector(".stream-main video");
+    return v && v.videoWidth > 0;
+  }, null, { timeout: 15000 });
+  await shot(b.page, "screen-share");
+  await a.page.click(".call-btn[aria-label='Share screen']");
+  log("screen share: LIVE badge, viewer receives video frames");
   await a.page.click("button[aria-label='Mute']");
   await b.page.locator(".voice-person:has-text('Alice') svg").first().waitFor({ timeout: 8000 });
   await a.page.click(".call-btn.hang");
@@ -324,6 +361,16 @@ try {
   await b.page.locator(`.discovery-card:has-text('Game Night ${stamp}')`).waitFor({ timeout: 8000 });
   await shot(b.page, "discover");
   log("discover lists the public server");
+
+  // kick: alice removes bob, bob is told and the server disappears
+  await a.page.click(`.rail-item[aria-label^='Game Night ${stamp}']`);
+  await a.page.locator(".members .member-row:has-text('Bob')").click();
+  await a.page.click(".profile-card button[aria-label='More']");
+  await a.page.click(".ctx-item:has-text('Kick Bob')");
+  await a.page.click(".modal-foot button:has-text('Kick')");
+  await b.page.locator(".toast:has-text('You were kicked')").waitFor({ timeout: 8000 });
+  await b.page.locator(`.rail-item[aria-label^='Game Night ${stamp}']`).waitFor({ state: "detached" });
+  log("kick: member removed live, told why");
 
   // quick switcher
   await b.page.keyboard.press("Control+k");

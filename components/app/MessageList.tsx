@@ -66,9 +66,10 @@ export function MessageList({
     return c?.lastMessageId && last && c.lastMessageId > last ? last : null;
   });
 
+  const missing = !cm;
   useEffect(() => {
     if (!jumpTo) void loadLatest(channelId);
-  }, [channelId, jumpTo]);
+  }, [channelId, jumpTo, missing]);
 
   // jump-to-message requests (search, pins, replies)
   useEffect(() => {

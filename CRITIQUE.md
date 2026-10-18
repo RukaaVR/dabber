@@ -47,3 +47,38 @@ embeds, voice messages, drag-reorder and server mute). Console: only the asset 4
 | 7 | Edge case | Replying to a poll shows an empty reply preview; poll notifications read "Sent an attachment". | ✅ "📊 question" |
 | 8 | A11y | Accent buttons on light accents (Mint, Sunny…) had white text at 2.2–3.3:1. | ✅ `--on-accent` picks white or near-black per accent for ≥4.5:1 |
 | 9 | A11y | The default violet with white text was 4.2:1. | ✅ darkened to `#7158f5` (4.75:1) |
+
+## Pass 3
+
+Build, lint and smoke: clean (30/30). This pass added a screenshot tour of the less-travelled screens
+(`scripts/tour.mjs`: 404, invalid invite, login error, menus, pickers, modals, every settings page, and
+mobile for each) and a line-by-line review of the server code.
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| 1 | Assets | Still blocked (see pass 1). | ⛔ |
+| 2 | Mobile | The settings nav wraps into a messy two-row grid instead of one scrollable strip. | ✅ |
+| 3 | Mobile | The member list overlay can't be dismissed by tapping outside it. | ✅ scrim, tap to close |
+| 4 | Mobile | Long modal titles run under the close ✕ (Invite sheet). | ✅ the header reserves space |
+| 5 | Visual | A server-rendered image that fails before hydration shows the browser's broken-image icon (landing logo). | ✅ `Img` checks `complete && naturalWidth === 0` on mount |
+| 6 | UX | The status menu doesn't show which status is current. | ✅ "✓ Current" |
+| 7 | Console | The invite page probes `/api/bootstrap` when logged out and logs a 401. | ✅ new `/api/auth/session` returns 200 |
+| 8 | Data | Seeded servers open with a wall of four "joined the server" lines. | ✅ |
+| 9 | Bug | After a reconnect resync, the open chat and member list stay stuck on skeletons (the caches were cleared but nothing reloaded). | ✅ reload when the cache is empty |
+| 10 | Bug | A kicked or banned member, or everyone in a deleted voice channel or server, stays connected to voice. | ✅ the server forces them out and tells them why |
+| 11 | Security | No Origin check on writes (SameSite=Lax was the only CSRF guard), and multipart bodies are read fully before any size check. | ✅ cross-site writes refused; bodies over 105 MB rejected up front |
+| 12 | Code | Dead code: unused endpoints (`users/search`, `templates`, `voice`) and helpers. | ✅ removed |
+| 13 | Mobile | The settings close ✕ floats over the scrolling section strip, covering "Notifications". | ✅ the strip stops short of the ✕ |
+| — | Note | A wrong password logs `401` in the network console. That's the correct HTTP status for a failed login, not an app error, so it stays. | by design |
+
+## Pass 4
+
+The smoke test grew to 36 flows: DM call ringing and accept, screen sharing (the viewer checks that real
+video frames arrive), creating a DM from the group picker, and kicking a member live.
+
+| # | Area | Issue | Status |
+|---|------|-------|--------|
+| 1 | Assets | Still blocked (see pass 1). | ⛔ |
+| 2 | Bug | Coming back to a server lands in the **voice** channel you last opened instead of your last text channel, so the member list and composer are missing (found by the kick flow). | ✅ only text channels are remembered |
+| 3 | Bug | Kick / ban / nickname launched from a profile card's ⋯ menu open their confirm dialog *underneath* the card (z-index 70 vs 60), so the dialog can't be clicked. | ✅ the card closes when a modal opens and sits below modals |
+| 4 | Layout | The incoming-call card sits bottom-right on top of the composer's emoji / mic buttons. | ✅ moved under the header, top-right |

@@ -52,15 +52,17 @@ function VoicePanel() {
 }
 
 export function openStatusMenu(x: number, y: number) {
+  const cur = useStore.getState().me?.statusPref;
+  const mark = (s: string, hint?: string) => (cur === s ? "✓ Current" : hint);
   set({
     ctx: {
       x,
       y,
       items: [
-        { label: "🟢  Online", onClick: () => void setStatus("online") },
-        { label: "🌙  Idle", onClick: () => void setStatus("idle") },
-        { label: "⛔  Do Not Disturb", hint: "Mutes notifications", onClick: () => void setStatus("dnd") },
-        { label: "⚪  Invisible", hint: "Look offline", onClick: () => void setStatus("invisible") },
+        { label: "🟢  Online", hint: mark("online"), onClick: () => void setStatus("online") },
+        { label: "🌙  Idle", hint: mark("idle"), onClick: () => void setStatus("idle") },
+        { label: "⛔  Do Not Disturb", hint: mark("dnd", "Mutes notifications"), onClick: () => void setStatus("dnd") },
+        { label: "⚪  Invisible", hint: mark("invisible", "Look offline"), onClick: () => void setStatus("invisible") },
         { sep: true, label: "" },
         { label: "Set a custom status", onClick: () => set({ modal: { kind: "custom-status" } }) },
         { label: "Edit profile", onClick: () => set({ settingsOpen: "profile" }) },

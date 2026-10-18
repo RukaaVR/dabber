@@ -59,6 +59,21 @@ export function effectiveStatus(userId: string, pref: string): Status {
   return pref as Status;
 }
 
+/** Drop someone from voice server-side (kicked, banned, channel deleted). */
+export function forceLeaveVoice(userId: string, audience: string[], reason: string) {
+  const h = hub();
+  const st = h.voice.get(userId);
+  if (!st) return;
+  h.voice.delete(userId);
+  const sid = h.voiceSocket.get(userId);
+  h.voiceSocket.delete(userId);
+  if (sid) {
+    h.io?.sockets.sockets.get(sid)?.leave(`voice:${st.channelId}`);
+    h.io?.to(sid).emit("voice:kicked", { reason });
+  }
+  emitToUsers(audience, "voice:leave", { userId, channelId: st.channelId, reason: "removed" });
+}
+
 export function voiceStates(): VoiceState[] {
   return [...hub().voice.values()];
 }

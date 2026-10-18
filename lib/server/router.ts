@@ -60,6 +60,20 @@ export class Router {
     const m = this.match(req.method, segs);
     if (m === null) return Response.json({ error: "Not found" }, { status: 404 });
     if (m === "405") return Response.json({ error: "Method not allowed" }, { status: 405 });
+    if (req.method !== "GET") {
+      // Defense in depth on top of SameSite cookies: refuse cross-site writes.
+      const origin = req.headers.get("origin");
+      const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+      let originHost: string | null = null;
+      try {
+        originHost = origin ? new URL(origin).host : null;
+      } catch {
+        originHost = "invalid";
+      }
+      if (originHost && host && originHost !== host) return Response.json({ error: "Cross-site request refused" }, { status: 403 });
+      const len = Number(req.headers.get("content-length") ?? 0);
+      if (len > 105 * 1024 * 1024) return Response.json({ error: "That upload is too big." }, { status: 413 });
+    }
     const userId = userIdFromCookieHeader(req.headers.get("cookie"));
     let bodyCache: unknown;
     const ctx: Ctx = {

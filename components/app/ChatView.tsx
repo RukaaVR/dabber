@@ -148,7 +148,9 @@ export function ChatView({ channelId }: { channelId: string }) {
     setActiveChannel(channelId);
     if (serverId) {
       void loadMembers(serverId);
-      setPrefs({ lastChannel: { ...get().prefs.lastChannel, [serverId]: channelId } });
+      // remember the last *text* channel; opening a voice channel joins voice, so
+      // landing back in it on the next visit would be surprising
+      if (get().channels[channelId]?.type === "text") setPrefs({ lastChannel: { ...get().prefs.lastChannel, [serverId]: channelId } });
     }
     set({ panel: null, editing: null });
     return () => setActiveChannel(null);
@@ -308,6 +310,7 @@ export function ChatView({ channelId }: { channelId: string }) {
             </div>
           )}
         </section>
+        {showMembers && !panel && <div className="members-scrim" onClick={() => set({ membersOpen: false })} aria-hidden="true" />}
         {panel ? (
           <SidePanel kind={panel} channelId={channelId} serverId={serverId} />
         ) : showMembers ? (

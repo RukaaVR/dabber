@@ -1,7 +1,7 @@
 "use client";
 
-import { get, useStore, type State } from "./store";
-import { hasPerm, type Channel, type PublicUser, type Role } from "../types";
+import { useStore, type State } from "./store";
+import { hasPerm, type Channel, type Role } from "../types";
 
 export function displayName(s: State, userId: string | null, serverId?: string | null): string {
   if (!userId) return "Deleted user";
@@ -11,10 +11,6 @@ export function displayName(s: State, userId: string | null, serverId?: string |
   }
   const u = s.users[userId];
   return u?.displayName ?? "Unknown user";
-}
-
-export function useDisplayName(userId: string | null, serverId?: string | null) {
-  return useStore((s) => displayName(s, userId, serverId));
 }
 
 export function sortedRoles(s: State, serverId: string): Role[] {
@@ -76,27 +72,12 @@ export function dmChannels(s: State): Channel[] {
     .sort((a, b) => (b.lastMessageId ?? b.id).localeCompare(a.lastMessageId ?? a.id));
 }
 
-export function canDo(serverId: string | null | undefined, perm: number): boolean {
-  if (!serverId) return false;
-  const s = get();
-  const p = s.servers[serverId]?.myPermissions ?? 0;
-  return hasPerm(p, perm);
-}
-
 export function useCan(serverId: string | null | undefined, perm: number): boolean {
   return useStore((s) => (serverId ? hasPerm(s.servers[serverId]?.myPermissions ?? 0, perm) : false));
-}
-
-export function statusOf(u: PublicUser | undefined | null): string {
-  return u?.status ?? "offline";
 }
 
 export function statusLabel(st: string): string {
   return (
     { online: "Online", idle: "Idle", dnd: "Do Not Disturb", invisible: "Invisible", offline: "Offline" } as Record<string, string>
   )[st] ?? "Offline";
-}
-
-export function voiceMembers(s: State, channelId: string) {
-  return Object.values(s.voiceStates).filter((v) => v.channelId === channelId);
 }

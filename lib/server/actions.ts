@@ -18,8 +18,9 @@ import {
   userRow,
   visibleServerChannels,
   memberRoleIds,
+  serverMemberIds as serverMemberIdsOf,
 } from "./repo";
-import { emitToServer, emitToUsers, setServerRoom, voiceStates } from "./realtime";
+import { emitToServer, emitToUsers, forceLeaveVoice, hub, setServerRoom, voiceStates } from "./realtime";
 import { DEFAULT_PERMS, type Bootstrap, type Message, type UnreadInfo } from "../types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -134,6 +135,9 @@ export function joinServer(serverId: string, userId: string) {
 export function removeMember(serverId: string, userId: string, reason: "left" | "kicked" | "banned" = "left") {
   const db = getDb();
   const name = (db.prepare("SELECT name FROM servers WHERE id = ?").get(serverId) as Row | undefined)?.name ?? "";
+  const vs = hub().voice.get(userId);
+  if (vs && channelRow(vs.channelId)?.server_id === serverId)
+    forceLeaveVoice(userId, [...serverMemberIdsOf(serverId), userId], "You were removed from that server, so you left voice.");
   db.prepare("DELETE FROM members WHERE server_id = ? AND user_id = ?").run(serverId, userId);
   emitToServer(serverId, "member:remove", { serverId, userId });
   setServerRoom(userId, serverId, false);

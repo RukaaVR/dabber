@@ -2425,6 +2425,9 @@ img {
   padding: 8px 8px 20px;
   --ring: var(--bg-side);
 }
+.members-scrim {
+  display: none;
+}
 .members .m-group {
   font-size: 12px;
   font-weight: 700;
@@ -2476,7 +2479,7 @@ img {
 
 .profile-card {
   position: fixed;
-  z-index: 70;
+  z-index: 58;
   width: 320px;
   max-width: calc(100vw - 24px);
   max-height: calc(100dvh - 24px);
@@ -2667,8 +2670,11 @@ img {
   max-width: 720px;
 }
 .modal-head {
-  padding: 22px 22px 6px;
+  padding: 22px 52px 6px 22px;
   position: relative;
+}
+.modal-head.center {
+  padding-left: 52px;
 }
 .modal-head.center {
   text-align: center;
@@ -3311,7 +3317,7 @@ img {
   position: fixed;
   z-index: 95;
   right: 20px;
-  bottom: 20px;
+  top: 64px;
   width: 260px;
   background: var(--bg-float);
   border: 1px solid var(--border);
@@ -4343,6 +4349,14 @@ img {
   .side-panel {
     width: 100%;
   }
+  .members-scrim {
+    display: block;
+    position: absolute;
+    inset: 52px 0 0 0;
+    background: #0007;
+    z-index: 24;
+    animation: fade 0.12s ease-out;
+  }
   .msg {
     padding-right: 12px;
   }
@@ -4353,14 +4367,19 @@ img {
     width: auto;
     flex-direction: row;
     align-items: center;
-    padding: 10px 56px 10px 10px;
+    padding: 10px;
+    margin-right: 56px;
     overflow-x: auto;
     flex-shrink: 0;
+    scrollbar-width: none;
   }
   .settings-nav .sn-inner {
     width: auto;
     display: flex;
     gap: 4px;
+  }
+  .settings-nav .sn-inner > div {
+    display: contents;
   }
   .settings-nav button {
     white-space: nowrap;
@@ -4377,6 +4396,15 @@ img {
   .settings-close {
     top: 10px;
     right: 10px;
+  }
+  .settings::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 56px;
+    height: 56px;
+    background: var(--bg-side);
   }
   .settings-close .label-text {
     display: none;

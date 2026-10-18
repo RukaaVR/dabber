@@ -23,8 +23,8 @@ export function InviteView({ code }: { code: string }) {
       .then(setInfo)
       .catch((e) => setError(errMsg(e)));
     api
-      .get("bootstrap")
-      .then(() => setMe(true))
+      .get<{ signedIn: boolean }>("auth/session")
+      .then((r) => setMe(r.signedIn))
       .catch(() => setMe(false));
   }, [code]);
 

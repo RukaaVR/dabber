@@ -160,7 +160,3 @@ export function AppRoot() {
   );
 }
 
-export function useIsMobile() {
-  return typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches;
-}
-
