@@ -13,21 +13,7 @@ trim_fit() { # src dst size  -> transparent, trimmed, centered square
   convert "$1" -trim +repage -resize "$3x$3" -background none -gravity center -extent "$3x$3" "$2"
 }
 
-# brand
-trim_fit "$(pick "$I/nobg-logo-a-0.png" "$I/logo-0.png")" "$OUT/brand/logo-mark.png" 256
-trim_fit "$(pick "$I/nobg-logo-b-0.png" "$I/nobg-logo-a-0.png")" "$OUT/brand/mascot.png" 512
-
-# app icons (full-bleed square art)
-ICON="$(pick "$I/appicon-0.png")"
-convert "$ICON" -resize 512x512^ -gravity center -extent 512x512 "$OUT/icons/icon-512.png"
-convert "$ICON" -resize 192x192^ -gravity center -extent 192x192 "$OUT/icons/icon-192.png"
-convert "$ICON" -resize 180x180^ -gravity center -extent 180x180 "$OUT/icons/apple-touch-icon.png"
-# maskable: keep the mascot inside the 80% safe zone on the icon's own background color
-BG="$(convert "$ICON" -format '%[pixel:p{4,4}]' info:)"
-convert "$ICON" -resize 400x400 -background "$BG" -gravity center -extent 512x512 "$OUT/icons/icon-maskable-512.png"
-convert "$ICON" -define icon:auto-resize=48,32,16 "$OUT/../app/favicon.ico" 2>/dev/null || convert "$ICON" -resize 48x48 "$OUT/favicon.ico"
-cp "$OUT/../app/favicon.ico" "$OUT/favicon.ico" 2>/dev/null || true
-rm -f "$OUT/../app/favicon.ico"
+# brand logo + app icons are hand-drawn SVG: see public/brand/mascot.svg and scripts/render-icons.mjs
 
 # default avatars
 for i in 0 1 2 3 4 5; do

@@ -21,16 +21,19 @@ scripts/process-assets.sh .asset-staging   # trim, resize, favicon, PWA icons, l
 `process-assets.sh` needs ImageMagick and ffmpeg. Its output is committed, so people who only want
 to run Dabber never need either script.
 
+## Logo and app icons
+
+The mascot ("Dab", a blue blob with a curly tuft) is hand-drawn vector art in
+`public/brand/mascot.svg`. `node scripts/render-icons.mjs` renders it into `brand/logo-mark.png`,
+`brand/mascot.png`, `icons/icon.svg`, `icons/icon-192.png`, `icons/icon-512.png`,
+`icons/icon-maskable-512.png` (safe-zone padded), `icons/apple-touch-icon.png` and `favicon.ico`
+(16/32/48, via ImageMagick). The earlier ForgeGUI logo generations (`382bbd0b…`, `65eba315…`) were
+replaced at the owner's request.
+
 ## Images
 
 | File in `public/` | Used for | ForgeGUI tool · job |
 |---|---|---|
-| `brand/logo-mark.png` | logo in the rail, auth, landing, loading screen | `generation_image` (icon_gfx) `382bbd0b…:0` → `remove_background` `d5af40ed…` |
-| `brand/mascot.png` | landing hero and closing section | `generation_image` `382bbd0b…:1` → `remove_background` `1f83c2da…` |
-| `icons/icon-192.png`, `icons/icon-512.png` | PWA icons | `generation_image` (icon_gfx, full-bleed app icon) `65eba315…:0` |
-| `icons/icon-maskable-512.png` | PWA maskable icon (safe-zone padded) | same source |
-| `icons/apple-touch-icon.png` | iOS home screen | same source |
-| `favicon.ico` (48/32/16) | browser tab | same source |
 | `avatars/default-0…5.png` | default avatars (six Dab colors) | `generation_image` (profile_icon ×6) `22c93927…:0-5` |
 | `illustrations/friends.png` | Friends empty states, Add Friend | `generation_image` `dade6dad…` → bg removed `52bcc495…` |
 | `illustrations/mentions.png` | Mentions inbox empty | `7ad26fda…` → `0ac9c6a0…` |
