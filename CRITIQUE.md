@@ -114,8 +114,8 @@ console errors besides the asset 404s, and 0 server errors.
 Two consecutive passes (6 and 7) found nothing left to fix in the code. One item stays open, and it
 is outside the code:
 
-- **ForgeGUI asset files aren't in `public/` yet.** All 41 assets (35 images including
-  background-removed versions, and 11 sounds) were generated with ForgeGUI under one style, but the
+- **ForgeGUI asset files aren't in `public/` yet.** Every asset (28 image generations, 18
+  background-removed versions and 11 sounds) was generated with ForgeGUI under one style, but the
   files live on `azyjlkhpdgafuobyxoax.supabase.co`, which this sandbox's network policy refuses
   (HTTP 403 on CONNECT). Until they're fetched, each image falls back gracefully (no broken icons)
   and sounds are silent, but the browser logs a 404 per missing file. The fix is two commands where that
